@@ -128,20 +128,21 @@ def additems(request):
 
 def update(request):
     if request.method=='POST':
-        #ip_address = request.POST['ip_address']
-        user_id = request.POST['user_id']
-        #http_method = request.POST['http_method']
-        resource = request.POST['resource']
-        #http_response = request.POST['http_response']
-        #date=request.POST['date']
+        block_id = request.POST['block_id']
+        date = request.POST['date']
+        source_ip = request.POST['source_ip']
+        destination_ip = request.POST['destination_ip']
+        size = request.POST['size']
+        type = request.POST['type']
+
 
         sql = """UPDATE accesslog
-        SET resource=%s
-        WHERE user_id=%s;"""
+        SET date=%s,source_ip=%s,destination_ip=%s,size=%s,type=%s
+        WHERE block_id=%s;"""
         try:
             conn = psycopg2.connect(host="localhost",database="logdb", user="postgres", password="123456")
             cur = conn.cursor()
-            cur.execute(sql, (resource,user_id))
+            cur.execute(sql, (date,source_ip,destination_ip,size,type,block_id))
             updated_rows = cur.rowcount
             conn.commit()
             cur.close()
@@ -150,7 +151,7 @@ def update(request):
         finally:
             if conn is not None:
                 conn.close()
-        messages.info(request,[user_id,resource])
+        messages.info(request,[date,source_ip,destination_ip,size,type,block_id])
         answer4 = request.POST['answer4']
         if answer4 == 'YES':
             return redirect('/')
