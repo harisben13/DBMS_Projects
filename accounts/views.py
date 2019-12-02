@@ -62,17 +62,16 @@ def search(request):
     if request.method=='POST':
         answer1 = request.POST['answer1']
         if answer1=='YES':
-            ip_address = request.POST['ip_address']
+            accesslog_referer = request.POST['ip_address']
             try:
                     #params=config(host="localhost",database="logdb", user="postgres", password="123456")
                     conn = psycopg2.connect(host="localhost",database="logdb", user="postgres", password="123456")
                     cur = conn.cursor()
-                    #cur.execute("BEGIN")
-                    #να δώσουμε το όνομα της κάθε stored function
-                    cur.callproc('name_of_our_stored_function', (ip_address,))
+                    cur.callproc('access_log_referer', (accesslog_referer))
+                    # SELECT access_log.referer FROM access_log WHERE access_log.referer is not null GROUP BY access_log.referer HAVING count(access_log.resource)>1 ORDER BY count(access_log resource) DESC
+                    # access_log_referer is a stored Function
                     row = cur.fetchall()
                     while row is not None:
-                        #Λογικά θα εμφανίζει τα αποτελέσματα
                         messages.info(request,row)
                         row = cur.fetchone()
             except (Exception, psycopg2.DatabaseError) as error:
@@ -100,13 +99,16 @@ def additems(request):
         resource = request.POST['resource']
         http_response = request.POST['http_response']
         date=request.POST['date']
+        response_size = request.POST['response_size']
+        referer = request.POST['referer']
+        user_agent = request.POST['user_agent']
 
-        sql = """INSERT INTO accesslog (ip_address,user_id,http_method,resource,http_response,date)
-             VALUES(%s,%s,%s,%s,%s,%s);"""
+        sql = """INSERT INTO accesslog (ip_address,user_id,http_method,resource,http_response,date,response_size,referer,user_agent)
+             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s);"""
         try:
             conn = psycopg2.connect(host="localhost",database="logdb", user="postgres", password="123456")
             cur = conn.cursor()
-            cur.execute(sql, (ip_address,user_id,http_method,resource,http_response,date))
+            cur.execute(sql, (ip_address,user_id,http_method,resource,http_response,date,response_size,referer,user_agent))
             conn.commit()
             cur.close()
         except (Exception, psycopg2.DatabaseError) as error:
@@ -114,7 +116,7 @@ def additems(request):
         finally:
             if conn is not None:
                 conn.close()
-        messages.info(request,[ip_address,user_id,http_method,resource,http_response,date])
+        messages.info(request,[ip_address,user_id,http_method,resource,http_response,date,response_size,referer,user_agent])
         answer3 = request.POST['answer3']
         if answer3 == 'YES':
             return redirect('/')
